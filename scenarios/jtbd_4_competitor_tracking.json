@@ -1,0 +1,45 @@
+{
+  "id": "jtbd-4-competitors",
+  "name": "JTBD 4: Competitor Discovery (Moderate Usage)",
+  "models": [
+    "gpt-4o",
+    "claude-3.7-sonnet",
+    "gemini-2.5-flash"
+  ],
+  "intent_groups": [
+    {
+      "name": "Competitor mentions in evaluative queries",
+      "intents_count": 40,
+      "variants_per_intent": 4,
+      "frequency": "daily",
+      "flow_steps": [
+        {
+          "name": "main-answer",
+          "uses_model": "current",
+          "input_tokens_strategy": "fixed",
+          "fixed_input_tokens": 180,
+          "expected_output_tokens": 700,
+          "runs_per_prompt": 1
+        },
+        {
+          "name": "extract-entities",
+          "uses_model": "current",
+          "input_tokens_strategy": "from_previous_output",
+          "expected_output_tokens": 300,
+          "runs_per_prompt": 1,
+          "comment": "Larger output to capture all mentioned competitors"
+        },
+        {
+          "name": "competitor-cluster",
+          "uses_model": "current",
+          "input_tokens_strategy": "fixed",
+          "fixed_input_tokens": 400,
+          "expected_output_tokens": 150,
+          "runs_per_prompt": 1,
+          "comment": "Small LLM to group similar competitors"
+        }
+      ]
+    }
+  ],
+  "days_per_month": 30
+}

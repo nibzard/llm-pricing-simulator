@@ -1,0 +1,35 @@
+{
+  "id": "test-battery",
+  "name": "Test: 50 Questions Across All Models",
+  "models": [
+    "gpt-4o",
+    "claude-3.7-sonnet",
+    "gemini-2.5-flash"
+  ],
+  "intent_groups": [
+    {
+      "name": "50 question battery across all models",
+      "intents_count": 50,
+      "variants_per_intent": 3,
+      "frequency": "daily",
+      "flow_steps": [
+        {
+          "name": "main-answer",
+          "uses_model": "current",
+          "input_tokens_strategy": "fixed",
+          "fixed_input_tokens": 150,
+          "expected_output_tokens": 500,
+          "runs_per_prompt": 1
+        },
+        {
+          "name": "extract-entities",
+          "uses_model": "current",
+          "input_tokens_strategy": "from_previous_output",
+          "expected_output_tokens": 200,
+          "runs_per_prompt": 1
+        }
+      ]
+    }
+  ],
+  "days_per_month": 30
+}

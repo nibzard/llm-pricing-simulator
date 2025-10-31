@@ -1,0 +1,12 @@
+{
+  "_comment": "Add manual price overrides here for models missing from simonw/llm-prices or for custom rates",
+  "_example": {
+    "custom-model-id": {
+      "vendor": "CustomVendor",
+      "name": "Custom Model",
+      "input_per_million": 5.0,
+      "output_per_million": 15.0,
+      "input_cached_per_million": 2.5
+    }
+  }
+}

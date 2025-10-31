@@ -1,0 +1,39 @@
+{
+  "id": "jtbd-3-comparison",
+  "name": "JTBD 3: Compare LLM Framing (High Usage)",
+  "models": [
+    "gpt-4o",
+    "claude-3.7-sonnet",
+    "gemini-2.5-flash",
+    "claude-3.5-haiku",
+    "gpt-4o-mini"
+  ],
+  "intent_groups": [
+    {
+      "name": "Multi-model comparison analysis",
+      "intents_count": 80,
+      "variants_per_intent": 4,
+      "frequency": "2_hourly",
+      "flow_steps": [
+        {
+          "name": "main-answer",
+          "uses_model": "current",
+          "input_tokens_strategy": "fixed",
+          "fixed_input_tokens": 200,
+          "expected_output_tokens": 600,
+          "runs_per_prompt": 1
+        },
+        {
+          "name": "judge-differences",
+          "uses_model": "current",
+          "input_tokens_strategy": "fixed",
+          "fixed_input_tokens": 800,
+          "expected_output_tokens": 300,
+          "runs_per_prompt": 1,
+          "comment": "Compares all model outputs - expensive step"
+        }
+      ]
+    }
+  ],
+  "days_per_month": 30
+}

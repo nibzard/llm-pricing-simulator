@@ -246,42 +246,49 @@ def scenario_builder_tab():
 
                     # Model assignment selection
                     st.markdown("**Model Assignment:**")
-                    model_mode = st.radio(
-                        "Which models to use?",
-                        options=["All selected models", "Specific model (cost optimization)"],
-                        index=0 if i == 0 else 1,
-                        key=f"model_mode_{i}",
-                        help="'All selected models' compares outputs. 'Specific model' uses one cheap model for extraction/judge."
-                    )
 
-                    # Conditional rendering - only show dropdown for specific model
-                    if model_mode == "Specific model (cost optimization)":
-                        # Show budget-friendly models first
-                        budget_models = [
-                            "gpt-5-mini", "claude-4.5-haiku", "gemini-2.5-flash",
-                            "gpt-4o-mini", "claude-3.5-haiku", "gemini-2.0-flash"
-                        ]
-
-                        budget_available = [m for m in budget_models if m in available_models]
-                        other_models = [m for m in available_models if m not in budget_models]
-
-                        all_options = budget_available + ["---"] + other_models
-
-                        uses_model = st.selectbox(
-                            "Select specific model",
-                            options=all_options,
-                            index=0 if budget_available else 2,
-                            key=f"uses_model_{i}",
-                            help="Recommended: Use cheap models like gpt-5-mini for extraction/judge"
+                    # Step 1 MUST use all selected models (that's the point of the tool!)
+                    if i == 0:
+                        st.info(f"✅ Step 1 always uses **all {len(selected_models)} selected models** for comparison")
+                        uses_model = "current"
+                    else:
+                        # Steps 2+ can choose between all models or a specific model
+                        model_mode = st.radio(
+                            "Which models to use?",
+                            options=["All selected models", "Specific model (cost optimization)"],
+                            index=1,  # Default to specific model for extraction/judge steps
+                            key=f"model_mode_{i}",
+                            help="'All selected models' processes with every model. 'Specific model' uses one cheap model for extraction/judge."
                         )
 
-                        if uses_model == "---":
-                            uses_model = budget_available[0] if budget_available else available_models[0]
+                        # Conditional rendering - only show dropdown for specific model
+                        if model_mode == "Specific model (cost optimization)":
+                            # Show budget-friendly models first
+                            budget_models = [
+                                "gpt-5-mini", "claude-4.5-haiku", "gemini-2.5-flash",
+                                "gpt-4o-mini", "claude-3.5-haiku", "gemini-2.0-flash"
+                            ]
 
-                        st.info(f"💡 This step will use **{uses_model}** to process outputs from all {len(selected_models)} models")
-                    else:
-                        uses_model = "current"
-                        st.success(f"✅ This step will use **all {len(selected_models)} selected models** for comparison")
+                            budget_available = [m for m in budget_models if m in available_models]
+                            other_models = [m for m in available_models if m not in budget_models]
+
+                            all_options = budget_available + ["---"] + other_models
+
+                            uses_model = st.selectbox(
+                                "Select specific model",
+                                options=all_options,
+                                index=0 if budget_available else 2,
+                                key=f"uses_model_{i}",
+                                help="Recommended: Use cheap models like gpt-5-mini for extraction/judge"
+                            )
+
+                            if uses_model == "---":
+                                uses_model = budget_available[0] if budget_available else available_models[0]
+
+                            st.info(f"💡 **{uses_model}** will process outputs from all {len(selected_models)} models")
+                        else:
+                            uses_model = "current"
+                            st.success(f"✅ All {len(selected_models)} selected models will be used")
 
                     token_strategy = st.selectbox(
                         "Input Token Strategy",

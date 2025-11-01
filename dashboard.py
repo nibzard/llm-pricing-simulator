@@ -43,6 +43,30 @@ def load_prices(force_refresh=False):
     return prices
 
 
+def load_scenario_files():
+    """Load all scenario JSON files from scenarios/ directory."""
+    scenarios_dir = Path("scenarios")
+    scenario_files = {}
+
+    if scenarios_dir.exists():
+        for file_path in scenarios_dir.glob("*.json"):
+            # Skip template file
+            if file_path.name == "template.json":
+                continue
+            try:
+                with open(file_path, 'r') as f:
+                    data = json.load(f)
+                    scenario = Scenario(**data)
+                    scenario_files[file_path.stem] = {
+                        "path": file_path,
+                        "scenario": scenario
+                    }
+            except Exception as e:
+                st.warning(f"Could not load {file_path.name}: {e}")
+
+    return scenario_files
+
+
 def create_scenario_from_form(name, models, intents, variants, frequency, flow_steps, days=30):
     """Create a scenario from form inputs."""
     return Scenario(
@@ -577,47 +601,89 @@ def pricing_strategy_tab():
     with col1:
         st.subheader("Infrastructure Costs")
 
-        # Quick scenario inputs
-        intents = st.number_input("Intents to Track", min_value=1, value=50, step=10)
-        variants = st.number_input("Variants per Intent", min_value=1, value=3, step=1)
-
-        frequency = st.selectbox(
-            "Monitoring Frequency",
-            options=["daily", "2_hourly", "hourly", "weekly", "monthly"],
-            index=0
+        # Choice between loading scenario or quick calculation
+        scenario_mode = st.radio(
+            "Scenario Source",
+            options=["Load Existing Scenario", "Quick Calculation"],
+            horizontal=True,
+            help="Load a saved scenario from Scenario Builder or create a quick calculation"
         )
 
-        num_models = st.slider("Number of Models", min_value=1, max_value=10, value=3)
+        if scenario_mode == "Load Existing Scenario":
+            # Load available scenarios
+            scenario_files = load_scenario_files()
 
-        # Simple calculation
-        popular_models = ["gpt-4o", "claude-3.7-sonnet", "gemini-2.5-flash"][:num_models]
+            if not scenario_files:
+                st.warning("No scenario files found in scenarios/ directory. Build one in the Scenario Builder tab first!")
+                return
 
-        flow_steps = [
-            FlowStep(
-                name="main-answer",
-                uses_model="current",
-                input_tokens_strategy=TokenStrategy.FIXED,
-                fixed_input_tokens=150,
-                expected_output_tokens=500,
-                runs_per_prompt=1
-            ),
-            FlowStep(
-                name="extract-entities",
-                uses_model="current",
-                input_tokens_strategy=TokenStrategy.FROM_PREVIOUS_OUTPUT,
-                expected_output_tokens=200,
-                runs_per_prompt=1
+            # Let user select a scenario
+            selected_scenario_key = st.selectbox(
+                "Select Scenario",
+                options=list(scenario_files.keys()),
+                format_func=lambda x: scenario_files[x]["scenario"].name,
+                help="Choose a scenario you've previously built or saved"
             )
-        ]
 
-        scenario = create_scenario_from_form(
-            "Pricing Strategy",
-            popular_models,
-            intents,
-            variants,
-            frequency,
-            flow_steps
-        )
+            scenario = scenario_files[selected_scenario_key]["scenario"]
+
+            # Display scenario info
+            st.info(f"""
+            **{scenario.name}**
+            - Models: {len(scenario.models)} ({', '.join(scenario.models[:3])}{'...' if len(scenario.models) > 3 else ''})
+            - Intent groups: {len(scenario.intent_groups)}
+            - Total prompts: {sum(g.intents_count * g.variants_per_intent for g in scenario.intent_groups)}
+            """)
+
+            # Calculate total intents/variants for pricing display
+            total_prompts = sum(g.intents_count * g.variants_per_intent for g in scenario.intent_groups)
+            intents = total_prompts  # Simplified for display
+            variants = 1
+            frequency = scenario.intent_groups[0].frequency.value if scenario.intent_groups else "daily"
+            num_models = len(scenario.models)
+
+        else:
+            # Quick scenario inputs
+            intents = st.number_input("Intents to Track", min_value=1, value=50, step=10)
+            variants = st.number_input("Variants per Intent", min_value=1, value=3, step=1)
+
+            frequency = st.selectbox(
+                "Monitoring Frequency",
+                options=["daily", "2_hourly", "hourly", "weekly", "monthly"],
+                index=0
+            )
+
+            num_models = st.slider("Number of Models", min_value=1, max_value=10, value=3)
+
+            # Simple calculation
+            popular_models = ["gpt-4o", "claude-3.7-sonnet", "gemini-2.5-flash"][:num_models]
+
+            flow_steps = [
+                FlowStep(
+                    name="main-answer",
+                    uses_model="current",
+                    input_tokens_strategy=TokenStrategy.FIXED,
+                    fixed_input_tokens=150,
+                    expected_output_tokens=500,
+                    runs_per_prompt=1
+                ),
+                FlowStep(
+                    name="extract-entities",
+                    uses_model="current",
+                    input_tokens_strategy=TokenStrategy.FROM_PREVIOUS_OUTPUT,
+                    expected_output_tokens=200,
+                    runs_per_prompt=1
+                )
+            ]
+
+            scenario = create_scenario_from_form(
+                "Pricing Strategy",
+                popular_models,
+                intents,
+                variants,
+                frequency,
+                flow_steps
+            )
 
         result = st.session_state.calculator.calculate_scenario(scenario)
 

@@ -879,6 +879,41 @@ def report_generator_tab():
     The report includes cost analysis, pricing recommendations, and unit economics.
     """)
 
+    # Download static comprehensive report
+    st.subheader("📥 Download Comprehensive Report")
+
+    report_path = Path("report.md")
+    if report_path.exists():
+        with open(report_path, 'r') as f:
+            report_content = f.read()
+
+        col1, col2 = st.columns([3, 1])
+        with col1:
+            st.markdown("""
+            **Full Analysis Report** - Complete pricing strategy analysis covering 8 scenarios:
+            - Cost range: $49.55 to $8,997.12/month
+            - Detailed breakdown per scenario with use cases
+            - Pricing recommendations by company stage
+            - Unit economics and optimization tactics
+            """)
+        with col2:
+            st.download_button(
+                label="📥 Download Full Report",
+                data=report_content,
+                file_name="llm_pricing_comprehensive_report.md",
+                mime="text/markdown",
+                help="Download the complete 8-scenario pricing analysis"
+            )
+
+    st.divider()
+
+    # Custom report generator
+    st.subheader("🔧 Generate Custom Report")
+
+    st.markdown("""
+    Create a custom report by selecting specific scenarios and setting your own markup strategy.
+    """)
+
     if not st.session_state.prices:
         st.warning("Loading price data...")
         return
@@ -890,7 +925,7 @@ def report_generator_tab():
         st.warning("No scenario files found in scenarios/ directory.")
         return
 
-    st.subheader("Select Scenarios")
+    st.markdown("**Select Scenarios**")
 
     # Let user select scenarios to include
     selected_scenarios = st.multiselect(

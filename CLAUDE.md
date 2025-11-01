@@ -95,6 +95,7 @@ uv run python run_simulation.py scenarios/jtbd_1.json --refresh
 - `2_hourly`: 12 × days_per_month
 - `daily`: days_per_month
 - `weekly`: days_per_month ÷ 7
+- `monthly`: 1
 
 ### Model IDs
 
@@ -149,7 +150,7 @@ Scenarios are JSON files in `scenarios/`. Use `template.json` as starting point.
 1. Copy `scenarios/template.json`
 2. Update model IDs (must match simonw/llm-prices)
 3. Set `intents_count` and `variants_per_intent` (multiplied together)
-4. Choose frequency: `hourly`, `2_hourly`, `4_hourly`, `daily`, `weekly`
+4. Choose frequency: `hourly`, `2_hourly`, `4_hourly`, `daily`, `weekly`, `monthly`
 5. Define flow steps with token strategies
 
 ### Adding price overrides

@@ -274,6 +274,8 @@ class CostCalculator:
             return days_per_month
         elif frequency == Frequency.WEEKLY:
             return days_per_month // 7
+        elif frequency == Frequency.MONTHLY:
+            return 1
         elif frequency == Frequency.CUSTOM:
             if custom_runs is None:
                 raise ValueError("custom_runs_per_month must be set for CUSTOM frequency")

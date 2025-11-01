@@ -212,7 +212,7 @@ def scenario_builder_tab():
         with col_c:
             frequency = st.selectbox(
                 "Monitoring Frequency",
-                options=["hourly", "2_hourly", "4_hourly", "daily", "weekly"],
+                options=["hourly", "2_hourly", "4_hourly", "daily", "weekly", "monthly"],
                 index=3,
                 help="How often to run the queries"
             )
@@ -583,7 +583,7 @@ def pricing_strategy_tab():
 
         frequency = st.selectbox(
             "Monitoring Frequency",
-            options=["daily", "2_hourly", "hourly"],
+            options=["daily", "2_hourly", "hourly", "weekly", "monthly"],
             index=0
         )
 

@@ -80,6 +80,7 @@ class Frequency(str, Enum):
     FOUR_HOURLY = "4_hourly"
     DAILY = "daily"
     WEEKLY = "weekly"
+    MONTHLY = "monthly"
     CUSTOM = "custom"
 
 

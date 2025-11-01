@@ -245,14 +245,16 @@ def scenario_builder_tab():
                     )
 
                     # Model assignment selection
+                    st.markdown("**Model Assignment:**")
                     model_mode = st.radio(
-                        "Which models to use for this step?",
+                        "Which models to use?",
                         options=["All selected models", "Specific model (cost optimization)"],
                         index=0 if i == 0 else 1,
                         key=f"model_mode_{i}",
                         help="'All selected models' compares outputs. 'Specific model' uses one cheap model for extraction/judge."
                     )
 
+                    # Conditional rendering - only show dropdown for specific model
                     if model_mode == "Specific model (cost optimization)":
                         # Show budget-friendly models first
                         budget_models = [
@@ -275,8 +277,11 @@ def scenario_builder_tab():
 
                         if uses_model == "---":
                             uses_model = budget_available[0] if budget_available else available_models[0]
+
+                        st.info(f"💡 This step will use **{uses_model}** to process outputs from all {len(selected_models)} models")
                     else:
                         uses_model = "current"
+                        st.success(f"✅ This step will use **all {len(selected_models)} selected models** for comparison")
 
                     token_strategy = st.selectbox(
                         "Input Token Strategy",
@@ -316,12 +321,6 @@ def scenario_builder_tab():
                         value=500 if i == 0 else 200,
                         key=f"output_tokens_{i}"
                     )
-
-                # Show current selection for debugging
-                if model_mode == "All selected models":
-                    st.caption(f"✓ Using all {len(selected_models)} selected models for this step")
-                else:
-                    st.caption(f"✓ Using {uses_model} for this step")
 
                 step = FlowStep(
                     name=step_name,

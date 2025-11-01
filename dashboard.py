@@ -146,19 +146,23 @@ def scenario_builder_tab():
         st.markdown("**Select Models to Track:**")
         selected_models = []
 
-        # Show popular models first
+        # Show popular models first (latest flagships)
         popular_models = [
-            "gpt-4o", "gpt-4o-mini",
-            "claude-3.7-sonnet", "claude-3.5-haiku",
-            "gemini-2.5-flash", "gemini-2.0-flash"
+            "claude-opus-4", "claude-sonnet-4.5", "claude-4.5-haiku",
+            "gpt-5", "gpt-5-mini", "gpt-4.5",
+            "gemini-2.5-pro", "gemini-2.5-flash",
+            "grok-4", "grok-4-fast"
         ]
+
+        # Default selections
+        default_selections = ["claude-sonnet-4.5", "gpt-5", "gemini-2.5-pro"]
 
         cols = st.columns(3)
         for i, model in enumerate(popular_models):
             if model in available_models:
                 if cols[i % 3].checkbox(
                     st.session_state.prices[model].name,
-                    value=(model in ["gpt-4o", "claude-3.7-sonnet", "gemini-2.5-flash"]),
+                    value=(model in default_selections),
                     key=f"model_{model}"
                 ):
                     selected_models.append(model)
@@ -240,6 +244,40 @@ def scenario_builder_tab():
                         key=f"step_name_{i}"
                     )
 
+                    # Model assignment selection
+                    model_mode = st.radio(
+                        "Which models to use for this step?",
+                        options=["All selected models", "Specific model (cost optimization)"],
+                        index=0 if i == 0 else 1,
+                        key=f"model_mode_{i}",
+                        help="'All selected models' compares outputs. 'Specific model' uses one cheap model for extraction/judge."
+                    )
+
+                    if model_mode == "Specific model (cost optimization)":
+                        # Show budget-friendly models first
+                        budget_models = [
+                            "gpt-5-mini", "claude-4.5-haiku", "gemini-2.5-flash",
+                            "gpt-4o-mini", "claude-3.5-haiku", "gemini-2.0-flash"
+                        ]
+
+                        budget_available = [m for m in budget_models if m in available_models]
+                        other_models = [m for m in available_models if m not in budget_models]
+
+                        all_options = budget_available + ["---"] + other_models
+
+                        uses_model = st.selectbox(
+                            "Select specific model",
+                            options=all_options,
+                            index=0 if budget_available else 2,
+                            key=f"uses_model_{i}",
+                            help="Recommended: Use cheap models like gpt-5-mini for extraction/judge"
+                        )
+
+                        if uses_model == "---":
+                            uses_model = budget_available[0] if budget_available else available_models[0]
+                    else:
+                        uses_model = "current"
+
                     token_strategy = st.selectbox(
                         "Input Token Strategy",
                         options=["fixed", "from_previous_output", "percent_of_previous_output"],
@@ -277,7 +315,7 @@ def scenario_builder_tab():
 
                 step = FlowStep(
                     name=step_name,
-                    uses_model="current",
+                    uses_model=uses_model,
                     input_tokens_strategy=TokenStrategy(token_strategy),
                     fixed_input_tokens=input_tokens if token_strategy == "fixed" else None,
                     percent_of_previous=percent if token_strategy == "percent_of_previous_output" else None,

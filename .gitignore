@@ -8,3 +8,9 @@ wheels/
 
 # Virtual environments
 .venv
+
+# Data and cache files
+data/price_cache.json
+
+# Generated results
+results/

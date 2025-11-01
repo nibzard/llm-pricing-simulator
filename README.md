@@ -31,22 +31,38 @@ uv sync
 
 ## Quick Start
 
-### Run a single scenario
+### Interactive Dashboard (Recommended)
+
+Launch the Streamlit dashboard for an interactive experience:
 
 ```bash
-python run_simulation.py scenarios/jtbd_1_brand_category.json
+uv run streamlit run dashboard.py
 ```
 
-### Run all scenarios
+The dashboard provides:
+- Interactive scenario builder
+- Real-time cost analysis with charts
+- Pricing strategy calculator
+- Multi-scenario comparison views
+
+### CLI Usage
+
+#### Run a single scenario
 
 ```bash
-python run_simulation.py --all
+uv run python run_simulation.py scenarios/jtbd_1_brand_category.json
 ```
 
-### Compare specific scenarios
+#### Run all scenarios
 
 ```bash
-python run_simulation.py --compare scenarios/jtbd_1*.json scenarios/jtbd_2*.json
+uv run python run_simulation.py --all
+```
+
+#### Compare specific scenarios
+
+```bash
+uv run python run_simulation.py --compare scenarios/jtbd_1*.json scenarios/jtbd_2*.json
 ```
 
 ## Project Structure
@@ -65,6 +81,8 @@ llm-pricing-simulator/
 ├── data/
 │   ├── overrides.json     # Manual price overrides
 │   └── price_cache.json   # Cached pricing (auto-generated)
+├── results/               # Generated reports (auto-generated)
+├── dashboard.py           # Streamlit web dashboard
 └── run_simulation.py      # CLI entry point
 ```
 

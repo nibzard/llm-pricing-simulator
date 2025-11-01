@@ -28,6 +28,13 @@ A Python-based research tool to estimate monthly API costs for running an LLM-po
    - Cost breakdowns by model, intent group, and step
    - Comparison reports across scenarios
 
+5. **Dashboard** (`dashboard.py`)
+   - Interactive Streamlit web interface
+   - Real-time scenario builder
+   - Visual cost analysis with Plotly charts
+   - Pricing strategy calculator
+   - Multi-scenario comparison views
+
 ### Scenarios
 
 4 pre-built JTBD scenarios:
@@ -42,13 +49,16 @@ A Python-based research tool to estimate monthly API costs for running an LLM-po
 # Setup
 uv sync
 
-# Run single scenario
+# Interactive dashboard (recommended)
+uv run streamlit run dashboard.py
+
+# CLI: Run single scenario
 uv run python run_simulation.py scenarios/jtbd_1_brand_category.json
 
-# Run all scenarios
+# CLI: Run all scenarios
 uv run python run_simulation.py --all
 
-# Save comparison report
+# CLI: Save comparison report
 uv run python run_simulation.py --all --output markdown --save results/report.md
 ```
 
@@ -93,9 +103,8 @@ llm-pricing-simulator/
 ├── data/
 │   ├── overrides.json      # Manual price overrides
 │   └── price_cache.json    # Cached pricing (auto)
-├── results/
-│   ├── jtbd_comparison.md  # Latest comparison
-│   └── KEY_INSIGHTS.md     # Analysis summary
+├── results/                # Generated reports (auto)
+├── dashboard.py            # Streamlit web dashboard
 ├── run_simulation.py       # CLI tool
 └── README.md               # Documentation
 ```
@@ -106,6 +115,9 @@ llm-pricing-simulator/
 - **httpx**: API requests
 - **pydantic**: Data validation
 - **python-dateutil**: Date handling
+- **streamlit**: Interactive web dashboard
+- **plotly**: Interactive data visualizations
+- **pandas**: Data manipulation and analysis
 
 ## Limitations & TODOs
 
@@ -118,7 +130,6 @@ llm-pricing-simulator/
 **Future Enhancements**:
 - [ ] Add tiktoken for real token counting
 - [ ] Historical price volatility analysis
-- [ ] Web UI for interactive scenario building
 - [ ] Export to CSV for spreadsheet analysis
 - [ ] Support for batch API pricing
 - [ ] Integration with real LLM APIs for quality testing

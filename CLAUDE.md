@@ -59,7 +59,7 @@ uv run python run_simulation.py scenarios/jtbd_1.json --refresh
 **Example flow**:
 ```json
 {
-  "models": ["gpt-4o", "claude-3.7-sonnet", "gemini-2.0-flash-exp"],
+  "models": ["claude-opus-4", "gpt-5", "gemini-2.5-pro"],
   "flow_steps": [
     {
       "name": "main-answer",
@@ -68,12 +68,12 @@ uv run python run_simulation.py scenarios/jtbd_1.json --refresh
     },
     {
       "name": "extract-entities",
-      "uses_model": "gemini-2.5-flash",  // ONE model extracts from all 3 answers
+      "uses_model": "claude-4.5-haiku",  // ONE cheap model extracts from all 3 answers
       ...
     },
     {
       "name": "judge-quality",
-      "uses_model": "gpt-4o-mini",  // ONE model judges all 3 extractions
+      "uses_model": "gpt-5-mini",  // ONE cheap model judges all 3 extractions
       ...
     }
   ]
@@ -99,10 +99,22 @@ uv run python run_simulation.py scenarios/jtbd_1.json --refresh
 ### Model IDs
 
 Model IDs in scenarios must match simonw/llm-prices exactly:
-- ✅ `"gpt-4o"` (correct)
-- ❌ `"openai-gpt-4o"` (wrong - adds vendor prefix)
-- ✅ `"claude-3.7-sonnet"` (correct)
-- ✅ `"gemini-2.5-flash"` (correct)
+- ✅ `"claude-opus-4"` (correct)
+- ✅ `"claude-sonnet-4.5"` (correct)
+- ✅ `"gpt-5"` (correct)
+- ✅ `"gemini-2.5-pro"` (correct)
+- ❌ `"openai-gpt-5"` (wrong - adds vendor prefix)
+
+**Recommended model sets**:
+
+High-tier flagship (best quality):
+- `claude-opus-4`, `claude-sonnet-4.5`, `gpt-5`, `gemini-2.5-pro`, `grok-4`
+
+Mid-tier efficient (balanced cost/quality):
+- `claude-4.5-haiku`, `gpt-5-mini`, `gemini-2.5-flash`, `grok-4-fast`
+
+Budget extraction/judge models:
+- `gpt-5-mini`, `claude-4.5-haiku`, `gemini-2.5-flash`
 
 Check current IDs: `curl -s https://www.llm-prices.com/current-v1.json | jq '.prices[].id'`
 
@@ -126,9 +138,10 @@ Scenarios are JSON files in `scenarios/`. Use `template.json` as starting point.
 - Use `percent_of_previous_output` with `percent_of_previous` for partial processing
 
 **Common patterns:**
-1. **Model comparison**: Use `"current"` for main answer to test multiple models
-2. **Cost optimization**: Use cheap model like `"gemini-2.5-flash"` for extraction/judge
-3. **Quality control**: Use `"gpt-4o-mini"` as judge for all model outputs
+1. **Model comparison**: Use `"current"` for main answer to test multiple flagship models
+2. **Cost optimization**: Use cheap model like `"gpt-5-mini"` or `"claude-4.5-haiku"` for extraction/judge
+3. **Quality control**: Use `"gpt-5-mini"` as judge for all model outputs
+4. **High-quality extraction**: Use `"claude-4.5-haiku"` for better quality at low cost
 
 ## Common Modifications
 

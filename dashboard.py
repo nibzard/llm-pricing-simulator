@@ -287,6 +287,10 @@ def scenario_builder_tab():
                     )
 
                 with step_col2:
+                    # Initialize variables
+                    input_tokens = None
+                    percent = None
+
                     if token_strategy == "fixed":
                         input_tokens = st.number_input(
                             "Fixed Input Tokens",
@@ -312,6 +316,12 @@ def scenario_builder_tab():
                         value=500 if i == 0 else 200,
                         key=f"output_tokens_{i}"
                     )
+
+                # Show current selection for debugging
+                if model_mode == "All selected models":
+                    st.caption(f"✓ Using all {len(selected_models)} selected models for this step")
+                else:
+                    st.caption(f"✓ Using {uses_model} for this step")
 
                 step = FlowStep(
                     name=step_name,

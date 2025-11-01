@@ -117,11 +117,12 @@ def main():
                 st.caption(f"Updated: {first_price.updated_at.strftime('%Y-%m-%d')}")
 
     # Main tabs
-    tab1, tab2, tab3, tab4 = st.tabs([
+    tab1, tab2, tab3, tab4, tab5 = st.tabs([
         "🎯 Scenario Builder",
         "📊 Cost Analysis",
         "💵 Pricing Strategy",
-        "🔄 Comparison"
+        "🔄 Comparison",
+        "📄 Report Generator"
     ])
 
     with tab1:
@@ -135,6 +136,9 @@ def main():
 
     with tab4:
         comparison_tab()
+
+    with tab5:
+        report_generator_tab()
 
 
 def scenario_builder_tab():
@@ -864,6 +868,227 @@ def comparison_tab():
         if st.button("🗑️ Clear Comparison"):
             st.session_state.scenarios = []
             st.rerun()
+
+
+def report_generator_tab():
+    """Generate custom pricing strategy reports."""
+    st.header("📄 Report Generator")
+
+    st.markdown("""
+    Generate a comprehensive pricing strategy report for selected scenarios.
+    The report includes cost analysis, pricing recommendations, and unit economics.
+    """)
+
+    if not st.session_state.prices:
+        st.warning("Loading price data...")
+        return
+
+    # Load all available scenarios
+    scenario_files = load_scenario_files()
+
+    if not scenario_files:
+        st.warning("No scenario files found in scenarios/ directory.")
+        return
+
+    st.subheader("Select Scenarios")
+
+    # Let user select scenarios to include
+    selected_scenarios = st.multiselect(
+        "Choose scenarios to include in the report",
+        options=list(scenario_files.keys()),
+        format_func=lambda x: scenario_files[x]["scenario"].name,
+        default=list(scenario_files.keys())[:3]  # Default to first 3
+    )
+
+    if not selected_scenarios:
+        st.info("Select at least one scenario to generate a report.")
+        return
+
+    # Markup strategy input
+    col1, col2 = st.columns(2)
+    with col1:
+        default_markup = st.slider(
+            "Target Markup Multiplier",
+            min_value=2.0,
+            max_value=10.0,
+            value=4.0,
+            step=0.5,
+            help="Default markup to apply for pricing recommendations"
+        )
+
+    with col2:
+        include_details = st.checkbox("Include detailed breakdowns", value=True)
+
+    if st.button("📊 Generate Report", type="primary"):
+        with st.spinner("Running simulations and generating report..."):
+            # Run simulations
+            results = []
+            for scenario_key in selected_scenarios:
+                scenario = scenario_files[scenario_key]["scenario"]
+                result = st.session_state.calculator.calculate_scenario(scenario)
+                results.append((scenario, result))
+
+            # Generate report content
+            report_content = generate_report_markdown(results, default_markup, include_details)
+
+            # Display preview
+            st.success("Report generated successfully!")
+
+            # Download button
+            st.download_button(
+                label="📥 Download Report (Markdown)",
+                data=report_content,
+                file_name=f"llm_pricing_report_{pd.Timestamp.now().strftime('%Y%m%d_%H%M%S')}.md",
+                mime="text/markdown",
+                help="Download the report as a Markdown file"
+            )
+
+            # Show preview
+            with st.expander("📄 Preview Report", expanded=False):
+                st.markdown(report_content)
+
+
+def generate_report_markdown(results, markup, include_details=True):
+    """Generate a markdown report from simulation results."""
+    from datetime import datetime
+
+    report = []
+    report.append("# LLM Pricing Strategy Report")
+    report.append(f"\n**Generated:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    report.append(f"**Scenarios Analyzed:** {len(results)}")
+    report.append("\n---\n")
+
+    # Executive Summary
+    report.append("## Executive Summary\n")
+
+    total_costs = [r[1].total_monthly_cost_usd for r in results]
+    report.append(f"This report analyzes {len(results)} scenarios with infrastructure costs ranging from **${min(total_costs):.2f} to ${max(total_costs):.2f} per month**.\n")
+
+    report.append("### Cost Overview\n")
+    report.append("| Scenario | Monthly Cost | API Calls | Models | Recommended Price ({}x) |".format(markup))
+    report.append("|----------|--------------|-----------|--------|------------------------|")
+
+    for scenario, result in results:
+        recommended = result.total_monthly_cost_usd * markup
+        report.append(f"| {scenario.name} | ${result.total_monthly_cost_usd:.2f} | {result.total_calls_per_month:,} | {len(scenario.models)} | ${recommended:.0f} |")
+
+    report.append("\n---\n")
+
+    # Detailed Scenario Analysis
+    report.append("## Detailed Scenario Analysis\n")
+
+    for i, (scenario, result) in enumerate(results, 1):
+        report.append(f"### {i}. {scenario.name}")
+        report.append(f"\n**Monthly Infrastructure Cost:** ${result.total_monthly_cost_usd:.2f}\n")
+
+        # Configuration
+        report.append("#### Configuration\n")
+        report.append(f"- **Models:** {len(scenario.models)} ({', '.join(scenario.models[:3])}{'...' if len(scenario.models) > 3 else ''})")
+
+        total_prompts = sum(g.intents_count * g.variants_per_intent for g in scenario.intent_groups)
+        report.append(f"- **Total Prompts:** {total_prompts}")
+        report.append(f"- **Intent Groups:** {len(scenario.intent_groups)}")
+
+        if scenario.intent_groups:
+            freq = scenario.intent_groups[0].frequency.value
+            report.append(f"- **Frequency:** {freq}")
+
+        report.append(f"- **Total API Calls:** {result.total_calls_per_month:,}/month\n")
+
+        if include_details:
+            # Cost Breakdown
+            report.append("#### Cost Breakdown\n")
+
+            # By model
+            if result.by_model:
+                report.append("**By Model:**")
+                for model_data in sorted(result.by_model, key=lambda x: x['cost_usd'], reverse=True):
+                    if model_data['cost_usd'] > 0:
+                        pct = (model_data['cost_usd'] / result.total_monthly_cost_usd) * 100
+                        report.append(f"- {model_data['model']}: ${model_data['cost_usd']:.2f} ({pct:.0f}%)")
+                report.append("")
+
+            # By step
+            if result.by_step:
+                report.append("**By Flow Step:**")
+                for step_data in sorted(result.by_step, key=lambda x: x['cost_usd'], reverse=True):
+                    pct = (step_data['cost_usd'] / result.total_monthly_cost_usd) * 100
+                    report.append(f"- {step_data['step']}: ${step_data['cost_usd']:.2f} ({pct:.0f}%)")
+                report.append("")
+
+        # Pricing Strategy
+        report.append("#### Recommended Pricing Strategy\n")
+
+        base_price = result.total_monthly_cost_usd * markup
+        starter_price = (result.total_monthly_cost_usd * 0.5) * markup
+        enterprise_price = (result.total_monthly_cost_usd * 2) * markup
+
+        report.append("| Tier | Monthly Price | Infrastructure Cost | Margin | Markup |")
+        report.append("|------|---------------|---------------------|--------|--------|")
+        report.append(f"| Starter | ${starter_price:.0f} | ${result.total_monthly_cost_usd * 0.5:.2f} | ${starter_price - (result.total_monthly_cost_usd * 0.5):.0f} | {markup}x |")
+        report.append(f"| Professional | ${base_price:.0f} | ${result.total_monthly_cost_usd:.2f} | ${base_price - result.total_monthly_cost_usd:.0f} | {markup}x |")
+        report.append(f"| Enterprise | ${enterprise_price:.0f} | ${result.total_monthly_cost_usd * 2:.2f} | ${enterprise_price - (result.total_monthly_cost_usd * 2):.0f} | {markup}x |")
+        report.append("")
+
+        # Unit Economics
+        report.append("#### Unit Economics\n")
+
+        if total_prompts > 0:
+            cost_per_prompt = result.total_monthly_cost_usd / total_prompts
+            price_per_prompt = cost_per_prompt * markup
+            report.append(f"- **Cost per prompt:** ${cost_per_prompt:.2f}")
+            report.append(f"- **Recommended charge per prompt:** ${price_per_prompt:.2f}")
+
+        if result.total_calls_per_month > 0:
+            cost_per_1k = (result.total_monthly_cost_usd / result.total_calls_per_month) * 1000
+            report.append(f"- **Cost per 1,000 API calls:** ${cost_per_1k:.2f}")
+
+        report.append("\n---\n")
+
+    # Recommendations
+    report.append("## Pricing Recommendations\n")
+
+    # Sort by cost
+    sorted_results = sorted(results, key=lambda x: x[1].total_monthly_cost_usd)
+
+    report.append("### By Cost Tier\n")
+
+    for scenario, result in sorted_results:
+        cost = result.total_monthly_cost_usd
+        if cost < 100:
+            tier = "Budget"
+            target_markup = "3-7x"
+            price_range = f"${cost * 3:.0f}-${cost * 7:.0f}"
+        elif cost < 500:
+            tier = "Standard"
+            target_markup = "3-5x"
+            price_range = f"${cost * 3:.0f}-${cost * 5:.0f}"
+        elif cost < 2000:
+            tier = "Professional"
+            target_markup = "2.5-4x"
+            price_range = f"${cost * 2.5:.0f}-${cost * 4:.0f}"
+        else:
+            tier = "Enterprise"
+            target_markup = "2-3x"
+            price_range = f"${cost * 2:.0f}-${cost * 3:.0f}"
+
+        report.append(f"**{scenario.name}** ({tier})")
+        report.append(f"- Infrastructure: ${cost:.2f}/month")
+        report.append(f"- Recommended markup: {target_markup}")
+        report.append(f"- Suggested pricing: {price_range}/month")
+        report.append("")
+
+    report.append("### Key Insights\n")
+    report.append(f"- Target infrastructure costs to be **20-40%** of revenue")
+    report.append(f"- With {markup}x markup, infrastructure represents {(1/markup)*100:.0f}% of revenue")
+    report.append(f"- Lower cost scenarios need higher markup multiples for viability")
+    report.append(f"- Higher cost scenarios can afford lower markup due to larger absolute margins")
+
+    report.append("\n---\n")
+    report.append("\n*Report generated by LLM Pricing Simulator*")
+    report.append("\n*Dashboard: http://100.126.153.59:8501*")
+
+    return "\n".join(report)
 
 
 if __name__ == "__main__":

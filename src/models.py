@@ -64,7 +64,7 @@ class TokenStrategy(str, Enum):
 class FlowStep(BaseModel):
     """A processing step in the LLM flow."""
     name: str
-    uses_model: str  # Reference to LLMModel.internal_id
+    uses_model: str  # "current" for all models being tested, or specific model ID for single model
     input_tokens_strategy: TokenStrategy
     fixed_input_tokens: Optional[int] = None
     percent_of_previous: Optional[float] = None  # For PERCENT_OF_PREVIOUS_OUTPUT

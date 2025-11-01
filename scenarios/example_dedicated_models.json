@@ -1,0 +1,42 @@
+{
+  "id": "dedicated-models-example",
+  "name": "Example: Dedicated Models for Extract/Judge",
+  "models": [
+    "gpt-4o",
+    "claude-3.7-sonnet",
+    "gemini-2.0-flash"
+  ],
+  "intent_groups": [
+    {
+      "name": "30 questions with dedicated extraction and judging",
+      "intents_count": 30,
+      "variants_per_intent": 2,
+      "frequency": "daily",
+      "flow_steps": [
+        {
+          "name": "main-answer",
+          "uses_model": "current",
+          "input_tokens_strategy": "fixed",
+          "fixed_input_tokens": 200,
+          "expected_output_tokens": 600,
+          "runs_per_prompt": 1
+        },
+        {
+          "name": "extract-entities",
+          "uses_model": "gemini-2.5-flash",
+          "input_tokens_strategy": "from_previous_output",
+          "expected_output_tokens": 150,
+          "runs_per_prompt": 1
+        },
+        {
+          "name": "judge-quality",
+          "uses_model": "gpt-4o-mini",
+          "input_tokens_strategy": "from_previous_output",
+          "expected_output_tokens": 100,
+          "runs_per_prompt": 1
+        }
+      ]
+    }
+  ],
+  "days_per_month": 30
+}

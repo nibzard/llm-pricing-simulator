@@ -65,7 +65,7 @@ class CostCalculator:
 
             # Accumulate by model and step
             for model_id, cost in group_details["by_model"].items():
-                by_model[model_id] += cost
+                by_model[model_id] = by_model.get(model_id, 0.0) + cost
 
             for step_name, cost in group_details["by_step"].items():
                 by_step[step_name] = by_step.get(step_name, 0.0) + cost
@@ -125,7 +125,7 @@ class CostCalculator:
 
             # Accumulate by model
             for model_id, cost in step_details["by_model"].items():
-                by_model[model_id] += cost
+                by_model[model_id] = by_model.get(model_id, 0.0) + cost
 
             # Accumulate by step
             by_step[step.name] = by_step.get(step.name, 0.0) + step_cost
@@ -149,7 +149,7 @@ class CostCalculator:
         previous_output_tokens: Optional[int],
         price_overrides: dict[str, dict[str, float]]
     ) -> tuple[float, dict]:
-        """Calculate costs for a single flow step across all models."""
+        """Calculate costs for a single flow step across all models or a single model."""
         total_cost = 0.0
         by_model = {}
 
@@ -163,8 +163,19 @@ class CostCalculator:
 
         output_tokens = step.expected_output_tokens
 
-        # Calculate for each model
-        for model_id in models:
+        # Determine which models to use for this step
+        if step.uses_model == "current":
+            # Use all models being tested (original behavior)
+            models_for_step = models
+        else:
+            # Use a specific model for this step (e.g., extraction or judge)
+            models_for_step = [step.uses_model]
+            # Still need to account for processing output from ALL tested models
+            # So we multiply total_prompts by the number of models being tested
+            total_prompts = total_prompts * len(models)
+
+        # Calculate for each model in this step
+        for model_id in models_for_step:
             model_cost = self._calculate_single_call(
                 model_id,
                 input_tokens,

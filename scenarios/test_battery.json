@@ -23,7 +23,7 @@
         },
         {
           "name": "extract-entities",
-          "uses_model": "current",
+          "uses_model": "gemini-2.5-flash",
           "input_tokens_strategy": "from_previous_output",
           "expected_output_tokens": 200,
           "runs_per_prompt": 1

@@ -19,14 +19,16 @@
           "input_tokens_strategy": "fixed",
           "fixed_input_tokens": 150,
           "expected_output_tokens": 500,
-          "runs_per_prompt": 1
+          "runs_per_prompt": 1,
+          "_comment": "uses_model='current' means all models in the 'models' array will be used"
         },
         {
           "name": "extract-entities",
-          "uses_model": "current",
+          "uses_model": "gemini-2.5-flash",
           "input_tokens_strategy": "from_previous_output",
           "expected_output_tokens": 200,
-          "runs_per_prompt": 1
+          "runs_per_prompt": 1,
+          "_comment": "uses_model can be a specific model ID to use one model for all extractions"
         }
       ]
     }

@@ -52,14 +52,38 @@ uv run python run_simulation.py scenarios/jtbd_1.json --refresh
 
 ### Critical Calculation Logic
 
-**Multi-model multiplication** happens in `calculator.py:_calculate_flow_step()`:
-```python
-# This is the key: EACH model processes ALL prompts
-total_prompts = intents_count × variants_per_intent
-for model_id in models:  # Multiplies cost across all models
-    cost = calculate_single_call(...)
-    total_cost = cost × total_prompts × runs_per_month × runs_per_prompt
+**Model assignment in flow steps**:
+- `uses_model: "current"` → ALL models in the scenario's `models` array process ALL prompts
+- `uses_model: "specific-model-id"` → ONE specific model processes ALL outputs from previous steps
+
+**Example flow**:
+```json
+{
+  "models": ["gpt-4o", "claude-3.7-sonnet", "gemini-2.0-flash-exp"],
+  "flow_steps": [
+    {
+      "name": "main-answer",
+      "uses_model": "current",  // All 3 models generate answers
+      ...
+    },
+    {
+      "name": "extract-entities",
+      "uses_model": "gemini-2.5-flash",  // ONE model extracts from all 3 answers
+      ...
+    },
+    {
+      "name": "judge-quality",
+      "uses_model": "gpt-4o-mini",  // ONE model judges all 3 extractions
+      ...
+    }
+  ]
+}
 ```
+
+**Cost calculation**:
+- Step 1 (answer): 3 models × 50 prompts × 30 days = 4,500 calls
+- Step 2 (extract): 1 model × (3 models × 50 prompts) × 30 days = 4,500 calls
+- Step 3 (judge): 1 model × (3 models × 50 prompts) × 30 days = 4,500 calls
 
 **Token strategies** determine input token counts:
 - `fixed`: Uses `fixed_input_tokens` value
@@ -87,15 +111,24 @@ Check current IDs: `curl -s https://www.llm-prices.com/current-v1.json | jq '.pr
 Scenarios are JSON files in `scenarios/`. Use `template.json` as starting point.
 
 **Key fields:**
-- `models`: Array of model IDs - ALL prompts run through ALL models
+- `models`: Array of model IDs - models to test for answer generation
 - `intent_groups`: Can have multiple groups with different frequencies
 - `flow_steps`: Processing pipeline (answer → extract → judge, etc.)
 - `price_overrides`: Per-model price adjustments for "what-if" analysis
+
+**Flow step model assignment:**
+- `uses_model: "current"` - Use ALL models from `models` array (for comparing model outputs)
+- `uses_model: "model-id"` - Use specific model (for extraction/judge, cost optimization)
 
 **Token strategies:**
 - Use `from_previous_output` for extraction/judge steps that process previous LLM output
 - Use `fixed` with `fixed_input_tokens` for initial answer steps
 - Use `percent_of_previous_output` with `percent_of_previous` for partial processing
+
+**Common patterns:**
+1. **Model comparison**: Use `"current"` for main answer to test multiple models
+2. **Cost optimization**: Use cheap model like `"gemini-2.5-flash"` for extraction/judge
+3. **Quality control**: Use `"gpt-4o-mini"` as judge for all model outputs
 
 ## Common Modifications
 
